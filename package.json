@@ -1,0 +1,29 @@
+{
+    "name": "angular-moment-calendar",
+    "version": "0.0.1",
+    "description": "Angular Moment Calendar is an AngularJS directive for a calendar component made with Moment.js.",
+    "main": "dist/angular-moment-calendar.min.js",
+    "author": "Indri Muska <indrimuska@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/indrimuska/angular-moment-calendar/issues"
+    },
+    "homepage": "https://github.com/indrimuska/angular-moment-calendar#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/indrimuska/angular-moment-calendar.git"
+    },
+    "keywords": [
+        "angular",
+        "events",
+        "moment-calendar",
+        "calendar",
+        "dates",
+        "scheduler",
+        "meetings",
+        "organizer"
+    ],
+    "scripts": {},
+    "dependencies": {},
+    "devDependencies": {}
+}
