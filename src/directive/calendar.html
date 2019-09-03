@@ -1,0 +1,37 @@
+<div class="calendar">
+    <!-- navigation -->
+    <div class="d-flex">
+        <div ng-click="view.previous.set()">
+            &larr;
+        </div>
+        <div class="flex-grow-1" ng-click="view.setParentView()">
+            {{ctrl.title}}
+        </div>
+        <div ng-click="view.next.set()">
+            &rarr;
+        </div>
+    </div>
+
+    <!-- header -->
+    <div class="d-flex">
+        <div ng-repeat="header in ctrl.header">
+            {{header}}
+        </div>
+    </div>
+
+    <!-- body -->
+    <div ng-repeat="row in ctrl.rows track by $index">
+        <div class="calendar-row dates">
+            <div ng-repeat="item in row.dates track by item.id" ng-class="item.classes" class="calendar-cell">
+                {{item.label}}
+            </div>
+        </div>
+        <div class="calendar-row events" ng-repeat="item in row.events">
+            <div class="calendar-cell" ng-class="'fill-' + item.offset"></div>
+            <div class="calendar-cell" ng-class="'fill-' + item.rowSpan">
+                {{item|json}}
+            </div>
+            <div class="calendar-cell" ng-class="'fill-' + (7 - item.rowSpan - item.offset)"></div>
+        </div>
+    </div>
+</div>
