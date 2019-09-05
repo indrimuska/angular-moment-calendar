@@ -1,25 +1,25 @@
-<div class="calendar">
-    <!-- navigation -->
-    <div class="d-flex">
-        <div ng-click="view.previous.set()">
-            &larr;
-        </div>
-        <div class="flex-grow-1" ng-click="view.setParentView()">
-            {{ctrl.title}}
-        </div>
-        <div ng-click="view.next.set()">
-            &rarr;
-        </div>
+<!-- navigation -->
+<div class="calendar-row">
+    <div ng-click="ctrl.prevMonth()">
+        &larr;
     </div>
-
-    <!-- header -->
-    <div class="calendar-row">
-        <div ng-repeat="header in ctrl.header" class="calendar-cell">
-            {{header}}
-        </div>
+    <div ng-click="view.setParentView()">
+        {{ctrl.title}}
     </div>
+    <div ng-click="ctrl.nextMonth()">
+        &rarr;
+    </div>
+</div>
 
-    <!-- body -->
+<!-- header -->
+<div class="calendar-row">
+    <div ng-repeat="header in ctrl.header" class="calendar-cell">
+        {{header}}
+    </div>
+</div>
+
+<!-- body -->
+<div class="calendar-body">
     <div ng-repeat="week in ctrl.weeks track by $index">
         <div class="calendar-row dates">
             <div ng-repeat="item in week.dates track by item.id" ng-class="item.classes" class="calendar-cell">
@@ -35,7 +35,9 @@
                     'ng-calendar-fill-' + item.rowSpan,
                 ]"
             >
-                {{item|json}}
+                <div class="calendar-event">
+                    {{item.event.name}}
+                </div>
             </div>
         </div>
     </div>

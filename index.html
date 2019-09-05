@@ -1,0 +1,16 @@
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js"></script>
+<script src="./dist/angular-moment-calendar.js"></script>
+<link rel="stylesheet" href="./dist/angular-moment-calendar.css">
+<script>
+angular.module('app', ['moment-calendar']);
+</script>
+<style>
+html, body {
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+</style>
+
+<div ng-app="app">
+    <moment-calendar></moment-calendar>
+</div>
