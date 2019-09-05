@@ -5,12 +5,15 @@
 .calendar-cell {
     flex-grow: 1;
     flex-basis: 0;
+    overflow: hidden;
 }
 
-.fill-1 { flex-grow: (1/7); }
-.fill-2 { flex-grow: (2/7); }
-.fill-3 { flex-grow: (3/7); }
-.fill-4 { flex-grow: (4/7); }
-.fill-5 { flex-grow: (5/7); }
-.fill-6 { flex-grow: (6/7); }
-.fill-7 { flex-grow: (7/7); }
+@for $i from 1 through 7 {
+    .ng-calendar-fill-#{$i} {
+        flex: 0 0 percentage($i / 7);
+        max-width: percentage($i / 7);
+    }
+    .ng-calendar-offset-#{$i} {
+        margin-left: percentage($i / 7);
+    }
+}

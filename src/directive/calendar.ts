@@ -116,21 +116,22 @@ class CalendarController {
                         // event should be added to this week
                         const endDate = !event.end ? day : moment(event.end);
                         const endViewDate = moment.min(endDate, endOfWeek);
-                        const offset = day.diff(startOfWeek, 'day');
+                        const weekOffset = day.diff(startOfWeek, 'day');
                         const rowSpan = endViewDate.diff(day, 'day') + 1;
                         // calculate 
-                        let rowIndex = weeks[week].rows.findIndex(row => (offset + 1) > (row.cols || 0));
+                        let rowIndex = weeks[week].rows.findIndex(row => (weekOffset + 1) > (row.cols || 0));
                         if (rowIndex === -1) {
                             rowIndex = weeks[week].rows.length > 0 ? weeks[week].rows.length : 0;
                         }
+                        if (!weeks[week].rows[rowIndex]) {
+                            weeks[week].rows[rowIndex] = { events:[] };
+                        }
+                        const offset = weekOffset - (weeks[week].rows[rowIndex].cols || 0);
                         const viewEvent: IViewEvent = {
                             event,
                             offset,
                             rowSpan,
                         };
-                        if (weeks[week].rows[rowIndex]) {
-                            weeks[week].rows[rowIndex] = { events:[] };
-                        }
                         weeks[week].rows[rowIndex].cols = Math.max(weeks[week].rows[rowIndex].cols || 0, offset + rowSpan);
                         weeks[week].rows[rowIndex].events.push(viewEvent);
                         // remove from the events to render array
