@@ -33,9 +33,12 @@ interface IViewEvent {
     rowSpan: number;
 }
 
-interface IViewRow {
+interface IViewWeek {
     dates: IViewDate[];
-    events: IViewEvent[];
+    rows: Array<{
+        events: IViewEvent[];
+        cols?: number;
+    }>;
 }
 
 interface IViewDate {
@@ -65,7 +68,7 @@ class CalendarController {
     currentMonth: moment.Moment = moment();
     title: string;
     header: string[];
-    rows: IViewRow[];
+    weeks: IViewWeek[];
 
     $onInit() {
         this.render();
@@ -73,15 +76,15 @@ class CalendarController {
 
     private render() {
         const day = this.currentMonth.clone().startOf('month').startOf('week').hour(12);
-        const rows: { [week: number]: IViewRow } = {};
+        const weeks: { [week: number]: IViewWeek } = {};
         const firstWeek = day.week();
         const lastWeek = firstWeek + 5;
 
         let events = MOCK_EVENTS.slice();
 
-        this.rows = [];
+        this.weeks = [];
         for (let week = firstWeek; week <= lastWeek; week++) {
-            rows[week] = { dates: [], events: [] } as IViewRow;
+            weeks[week] = { dates: [], rows: [] } as IViewWeek;
             const startOfWeek = day.clone().startOf('week');
             const endOfWeek = day.clone().endOf('week');
             for (let d = 0; d < 7; d++) {
@@ -102,25 +105,34 @@ class CalendarController {
                     // },
                     selectable: selectable
                 };
-                rows[week].dates.push(viewDate);
+                weeks[week].dates.push(viewDate);
                 // prepare event
-                events = events.filter((event, index) => {
+                events = events.filter(event => {
                     const startsToday = day.isSame(event.start, 'day');
                     const continuesThisWeek = day.isSame(startOfWeek, 'day') &&
                         day.isAfter(event.start, 'day') &&
                         event.end && endOfWeek.isSameOrAfter(event.end, 'day');
                     if (startsToday || continuesThisWeek) {
-                        // event should be added in this row of dates
+                        // event should be added to this week
                         const endDate = !event.end ? day : moment(event.end);
                         const endViewDate = moment.min(endDate, endOfWeek);
                         const offset = day.diff(startOfWeek, 'day');
                         const rowSpan = endViewDate.diff(day, 'day') + 1;
+                        // calculate 
+                        let rowIndex = weeks[week].rows.findIndex(row => (offset + 1) > (row.cols || 0));
+                        if (rowIndex === -1) {
+                            rowIndex = weeks[week].rows.length > 0 ? weeks[week].rows.length : 0;
+                        }
                         const viewEvent: IViewEvent = {
                             event,
                             offset,
                             rowSpan,
                         };
-                        rows[week].events.push(viewEvent);
+                        if (weeks[week].rows[rowIndex]) {
+                            weeks[week].rows[rowIndex] = { events:[] };
+                        }
+                        weeks[week].rows[rowIndex].cols = Math.max(weeks[week].rows[rowIndex].cols || 0, offset + rowSpan);
+                        weeks[week].rows[rowIndex].events.push(viewEvent);
                         // remove from the events to render array
                         const endsThisWeek = endOfWeek.isSameOrAfter(endViewDate, 'day');
                         if (endsThisWeek) {
@@ -134,7 +146,7 @@ class CalendarController {
             }
         }
         // object to array
-        Object.keys(rows).forEach(key => this.rows.push(rows[key]));
+        Object.keys(weeks).forEach(key => this.weeks.push(weeks[key]));
 
         // header and title
         this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format('dd'));
