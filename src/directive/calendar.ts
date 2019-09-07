@@ -1,8 +1,8 @@
-import * as angular from 'angular';
 import * as moment from 'moment';
 import { appModule } from '../module';
 import * as template from './calendar.html';
 import './calendar.scss';
+import { throttle } from '../utils';
 
 const LOCALE = 'it';
 const DAYS_FORMAT = 'D';
@@ -15,7 +15,7 @@ var y = date.getFullYear();
 
 const MOCK_EVENTS: IEvent[] = [
     { name: 'All Day Event', start: new Date(y, m, 1) },
-    { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d - 2) },
+    { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
     { name: 'Repeating Event', start: new Date(y, m, d - 3, 16, 0) },
     { name: 'Repeating Event', start: new Date(y, m, d + 4, 16, 0) },
     { name: 'Birthday Party', start: new Date(y, m, d + 1, 19, 0), end: new Date(y, m, d + 1, 22, 30) },
@@ -83,11 +83,20 @@ class CalendarController {
         this.$scope.$watch('ctrl.firstDate', () => {
             this.render();
         });
-        this.$element.on('wheel', (e: JQueryEventObject) => this.$scope.$evalAsync(() => {
-            const up = (e as unknown as WheelEvent).deltaY > 0;
-            const amount = up ? -7 : 7;
-            this.firstDateSum(amount, 'days');
-        }));
+        this.$element.on('wheel', throttle((e: JQueryEventObject | WheelEvent) => this.$scope.$evalAsync(() => {
+            const wheelAmount = (((e as JQueryEventObject).originalEvent || e) as WheelEvent).deltaY;
+            if (Math.abs(wheelAmount) > 0) {
+                const up = wheelAmount > 0;
+                const amount = up ? -7 : 7;
+                this.firstDateSum(amount, 'days');
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        }), 100));
+        // this.$element.on('scroll', e => {
+        //     e.preventDefault();
+        // });
     }
 
     private firstDateSum(amount: number, unit: moment.unitOfTime.DurationConstructor) {
@@ -105,8 +114,12 @@ class CalendarController {
     }
 
     private render() {
-        const month = moment(this.firstDate);
-        const day = month.clone().startOf('week').hour(12);
+        // header and title
+        const firstDate = moment(this.firstDate);
+        this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format('dd'));
+        this.title = firstDate.clone().endOf('week').format('MMMM YYYY');
+
+        const day = firstDate.clone().startOf('week').hour(12);
         const weeks: { [week: number]: IViewWeek } = {};
         const firstWeek = day.week();
         const lastWeek = firstWeek + 5;
@@ -181,10 +194,6 @@ class CalendarController {
         }
         // object to array
         Object.keys(weeks).forEach(key => this.weeks.push(weeks[key]));
-
-        // header and title
-        this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format('dd'));
-        this.title = month.format('MMMM YYYY');
     }
 }
 

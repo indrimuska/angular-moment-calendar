@@ -1,7 +1,10 @@
+$border-color: #ccc;
+
 moment-calendar {
     display: flex;
     flex-direction: column;
     height: 35rem;
+    font-size: 0.9rem;
 }
 .calendar-body {
     flex-grow: 1;
@@ -14,6 +17,25 @@ moment-calendar {
         overflow: hidden;
     }
 }
+.calendar-week {
+    position: relative;
+    border-top: 1px solid $border-color;
+}
+.calendar-boxes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+.calendar-box:not(:last-child) {
+    border-right: 1px solid $border-color;
+}
+.calendar-events-row {
+    position: relative;
+}
 .calendar-row {
     display: flex;
     flex-direction: row;
@@ -23,12 +45,17 @@ moment-calendar {
     flex-basis: 0;
     overflow: hidden;
 }
+.calendar-date {
+    padding: 0.1rem 0.3rem;
+}
 .calendar-event {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     border-radius: 0.2rem;
-    background: #03a9f4;
+    color: lighten(#70bbfd, 20);
+    background: darken(#70bbfd, 20);
+    font-size: 90%;
     margin: 0 0.4rem 0.2rem;
     padding: 0.15rem 0.3rem;
 }

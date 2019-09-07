@@ -20,16 +20,23 @@
 
 <!-- body -->
 <div class="calendar-body">
-    <div ng-repeat="week in ctrl.weeks track by $index">
-        <div class="calendar-row dates">
-            <div ng-repeat="item in week.dates track by item.id" ng-class="item.classes" class="calendar-cell">
+    <div ng-repeat="week in ctrl.weeks track by $index" class="calendar-week">
+        <div class="calendar-row calendar-boxes">
+            <div ng-repeat="item in week.dates track by item.id" class="calendar-cell calendar-box"></div>
+        </div>
+        <div class="calendar-row">
+            <div
+                ng-repeat="item in week.dates track by item.id"
+                ng-class="item.classes"
+                class="calendar-cell calendar-date"
+            >
                 {{item.label}}
             </div>
         </div>
-        <div class="calendar-row events" ng-repeat="row in week.rows track by $index">
+        <div class="calendar-row calendar-events-row" ng-repeat="row in week.rows track by $index">
             <div
                 ng-repeat="item in row.events track by $index"
-                class="calendar-cell border"
+                class="calendar-cell"
                 ng-class="[
                     'ng-calendar-offset-' + item.offset,
                     'ng-calendar-fill-' + item.rowSpan,
