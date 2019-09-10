@@ -1,34 +1,39 @@
 <!-- navigation -->
 <div class="calendar-row">
-    <div ng-click="ctrl.prevMonth()">
+    <div ng-click="ctrl.previousMonth()">
         &larr;
-    </div>
-    <div ng-click="view.setParentView()">
-        {{ctrl.title}}
     </div>
     <div ng-click="ctrl.nextMonth()">
         &rarr;
+    </div>
+    <div ng-click="view.setParentView()">
+        {{ctrl.title}}
     </div>
 </div>
 
 <!-- header -->
 <div class="calendar-row">
-    <div ng-repeat="header in ctrl.header" class="calendar-cell">
+    <div ng-repeat="header in ctrl.header" class="calendar-cell calendar-header">
         {{header}}
     </div>
 </div>
 
 <!-- body -->
 <div class="calendar-body">
-    <div ng-repeat="week in ctrl.weeks track by $index" class="calendar-week">
+    <div ng-repeat="(nr, week) in ctrl.weeks" class="calendar-week">
         <div class="calendar-row calendar-boxes">
-            <div ng-repeat="item in week.dates track by item.id" class="calendar-cell calendar-box"></div>
+            <div
+                ng-repeat="item in week.dates track by item.id"
+                class="calendar-cell calendar-box"
+                ng-class="{'calendar-other-month': item.otherMonth}"
+            >
+            </div>
         </div>
         <div class="calendar-row">
             <div
                 ng-repeat="item in week.dates track by item.id"
-                ng-class="item.classes"
                 class="calendar-cell calendar-date"
+                ng-class="{'calendar-other-month': item.otherMonth}"
             >
                 {{item.label}}
             </div>
@@ -38,11 +43,18 @@
                 ng-repeat="item in row.events track by $index"
                 class="calendar-cell"
                 ng-class="[
-                    'ng-calendar-offset-' + item.offset,
-                    'ng-calendar-fill-' + item.rowSpan,
+                    'calendar-offset-' + item.offset,
+                    'calendar-fill-' + item.rowSpan,
                 ]"
             >
-                <div class="calendar-event">
+                <div
+                    class="calendar-event"
+                    ng-class="{
+                        'calendar-event-start': !item.continuesThisWeek,
+                        'calendar-event-end': item.endsThisWeek,
+                    }"
+                    title="{{item.event.name}}"
+                >
                     {{item.event.name}}
                 </div>
             </div>

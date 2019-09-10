@@ -5,6 +5,8 @@ import './calendar.scss';
 import { throttle } from '../utils';
 
 const LOCALE = 'it';
+const MONTH_TITLE_FORMAT = 'MMMM YYYY';
+const HEADER_FORMAT = 'ddd';
 const DAYS_FORMAT = 'D';
 const ROWS_PER_WEEK = 3;
 
@@ -32,6 +34,8 @@ interface IViewEvent {
     event: IEvent;
     offset: number;
     rowSpan: number;
+    continuesThisWeek: boolean;
+    endsThisWeek: boolean;
 }
 
 interface IViewWeek {
@@ -45,14 +49,10 @@ interface IViewWeek {
 interface IViewDate {
     id: number;
     label: string;
-    year?: number;
-    month?: number;
-    date?: number;
-    hour?: number;
-    minute?: number;
-    second?: number;
-    classes?: { [name: string]: boolean };
-    selectable: boolean;
+    year: number;
+    month: number;
+    date: number;
+    otherMonth: boolean;
 }
 
 class CalendarDirective implements ng.IDirective {
@@ -70,7 +70,8 @@ class CalendarController {
 
     title: string;
     header: string[];
-    weeks: IViewWeek[];
+    // weeks: IViewWeek[];
+    weeks: { [week: number]: IViewWeek };
     rowsPerWeek: number = ROWS_PER_WEEK;
 
     static $inject = ['$scope', '$element'];
@@ -87,7 +88,7 @@ class CalendarController {
             const wheelAmount = (((e as JQueryEventObject).originalEvent || e) as WheelEvent).deltaY;
             if (Math.abs(wheelAmount) > 0) {
                 const up = wheelAmount > 0;
-                const amount = up ? -7 : 7;
+                const amount = up ? 7 : -7;
                 this.firstDateSum(amount, 'days');
             }
             e.preventDefault();
@@ -101,11 +102,11 @@ class CalendarController {
 
     private firstDateSum(amount: number, unit: moment.unitOfTime.DurationConstructor) {
         const firstDate = moment(this.firstDate);
-        this.firstDate = firstDate.subtract(amount, unit).toDate();
+        this.firstDate = firstDate.add(amount, unit).toDate();
 
     }
 
-    prevMonth() {
+    previousMonth() {
         this.firstDateSum(-1, 'month');
     }
 
@@ -113,11 +114,27 @@ class CalendarController {
         this.firstDateSum(1, 'month');
     }
 
+    private calculateCurrentMonth(firstDate: moment.Moment) {
+        let maxCountMonth: number;
+        const months: { [month: number]: number } = {};
+        const date = firstDate.clone();
+        for (let i = 0; i < 5 * 7; i++) {
+            const month = date.get('month');
+            months[month] = (months[month] || 0) + 1;
+            if (!maxCountMonth || month !== maxCountMonth && months[month] > months[maxCountMonth]) {
+                maxCountMonth = month;
+            }
+            date.add(1, 'day');
+        }
+        return date.set('month', maxCountMonth);
+    }
+
     private render() {
         // header and title
         const firstDate = moment(this.firstDate);
-        this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format('dd'));
-        this.title = firstDate.clone().endOf('week').format('MMMM YYYY');
+        const thisMonth = this.calculateCurrentMonth(firstDate);
+        this.title = thisMonth.format(MONTH_TITLE_FORMAT);
+        this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format(HEADER_FORMAT));
 
         const day = firstDate.clone().startOf('week').hour(12);
         const weeks: { [week: number]: IViewWeek } = {};
@@ -134,21 +151,13 @@ class CalendarController {
             const endOfWeek = day.clone().endOf('week');
             for (let d = 0; d < 7; d++) {
                 // prepare date
-                const selectable = true;//this.$scope.limits.isSelectable(day, 'day');
-                const disabled = false;//!selectable || day.month() !== month;
                 const viewDate: IViewDate = {
                     id: day.date(),
                     label: day.format(DAYS_FORMAT),
                     year: day.year(),
                     month: day.month(),
                     date: day.date(),
-                    // classes: {
-                    //     highlighted: this.$scope.keyboard && day.isSame(this.$scope.view.moment, 'day'),
-                    //     today: !!this.$scope.today && day.isSame(new Date(), 'day'),
-                    //     disabled: disabled,
-                    //     selected: isValidMoment(this.$ctrl.$modelValue) && day.isSame(this.$ctrl.$modelValue, 'day'),
-                    // },
-                    selectable: selectable
+                    otherMonth: day.isAfter(thisMonth, 'month') || day.isBefore(thisMonth, 'month')
                 };
                 week.dates.push(viewDate);
                 // prepare event
@@ -162,9 +171,10 @@ class CalendarController {
                         // event should be added to this week
                         const endDate = !event.end ? day : moment(event.end);
                         const endViewDate = moment.min(endDate, endOfWeek);
+                        const endsThisWeek = endOfWeek.isSameOrAfter(endDate, 'day');
                         const weekOffset = day.diff(startOfWeek, 'day');
                         const rowSpan = endViewDate.diff(day, 'day') + 1;
-                        // calculate 
+                        // calculate row index
                         let rowIndex = week.rows.findIndex(row => (weekOffset + 1) > (row.cols || 0));
                         if (rowIndex === -1) {
                             rowIndex = week.rows.length > 0 ? week.rows.length : 0;
@@ -177,11 +187,12 @@ class CalendarController {
                             event,
                             offset,
                             rowSpan,
+                            continuesThisWeek,
+                            endsThisWeek,
                         };
                         week.rows[rowIndex].cols = Math.max(week.rows[rowIndex].cols || 0, offset + rowSpan);
                         week.rows[rowIndex].events.push(viewEvent);
                         // remove from the events to render array
-                        const endsThisWeek = endOfWeek.isSameOrAfter(endDate, 'day');
                         if (endsThisWeek) {
                             return false;
                         }
@@ -193,7 +204,8 @@ class CalendarController {
             }
         }
         // object to array
-        Object.keys(weeks).forEach(key => this.weeks.push(weeks[key]));
+        // Object.keys(weeks).forEach(key => this.weeks.push(weeks[key]));
+        this.weeks = weeks;
     }
 }
 

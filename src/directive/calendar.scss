@@ -6,6 +6,9 @@ moment-calendar {
     height: 35rem;
     font-size: 0.9rem;
 }
+.calendar-header {
+    text-align: center;
+}
 .calendar-body {
     flex-grow: 1;
     display: flex;
@@ -30,8 +33,15 @@ moment-calendar {
     width: 100%;
     height: 100%;
 }
-.calendar-box:not(:last-child) {
-    border-right: 1px solid $border-color;
+.calendar-box {
+    &:not(:last-child) {
+        border-right: 1px solid $border-color;
+    }
+    transition: all 300ms ease;
+
+    &.calendar-other-month {
+        background: #fafafa;
+    }
 }
 .calendar-events-row {
     position: relative;
@@ -47,25 +57,42 @@ moment-calendar {
 }
 .calendar-date {
     padding: 0.1rem 0.3rem;
+    color: #666;
+    text-align: right;
+    z-index: 1;
+
+    &.calendar-other-month {
+        color: #999;
+    }
 }
 .calendar-event {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 0.2rem;
-    color: lighten(#70bbfd, 20);
+    color: #fff;
     background: darken(#70bbfd, 20);
-    font-size: 90%;
-    margin: 0 0.4rem 0.2rem;
-    padding: 0.15rem 0.3rem;
+    font-size: 85%;
+    margin: 0.1rem 0;
+    padding: 0.1rem 0.3rem;
+
+    &.calendar-event-start {
+        border-top-left-radius: 0.2rem;
+        border-bottom-left-radius: 0.2rem;
+        margin-left: 0.2rem;
+    }
+    &.calendar-event-end {
+        border-top-right-radius: 0.2rem;
+        border-bottom-right-radius: 0.2rem;
+        margin-right: 0.2rem;
+    }
 }
 
 @for $i from 1 through 7 {
-    .ng-calendar-fill-#{$i} {
+    .calendar-fill-#{$i} {
         flex: 0 0 percentage($i / 7);
         max-width: percentage($i / 7);
     }
-    .ng-calendar-offset-#{$i} {
+    .calendar-offset-#{$i} {
         margin-left: percentage($i / 7);
     }
 }
