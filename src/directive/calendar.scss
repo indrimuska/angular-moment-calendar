@@ -1,9 +1,19 @@
 $border-color: #ccc;
 
+$date-line-height: 1rem;
+$date-vpadding: 0.1rem;
+$event-line-height: 1rem;
+$event-vmargin: 0.1rem;
+$event-vpadding: 0.1rem;
+
+$body-min-height: (
+    $date-line-height + $date-vpadding * 2 +
+    $event-line-height + $event-vmargin * 2 + $event-vpadding * 2
+) * 6;
+
 moment-calendar {
     display: flex;
     flex-direction: column;
-    height: 35rem;
     font-size: 0.9rem;
 }
 .calendar-header {
@@ -14,6 +24,7 @@ moment-calendar {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    min-height: calc(#{$body-min-height} + 6px);
 
     > * {
         flex: 1 1 0;
@@ -40,7 +51,7 @@ moment-calendar {
     transition: all 300ms ease;
 
     &.calendar-other-month {
-        background: #fafafa;
+        background: #f2f2f2;
     }
 }
 .calendar-events-row {
@@ -56,7 +67,8 @@ moment-calendar {
     overflow: hidden;
 }
 .calendar-date {
-    padding: 0.1rem 0.3rem;
+    line-height: $date-line-height;
+    padding: $date-vpadding 0.3rem;
     color: #666;
     text-align: right;
     z-index: 1;
@@ -72,8 +84,9 @@ moment-calendar {
     color: #fff;
     background: darken(#70bbfd, 20);
     font-size: 85%;
-    margin: 0.1rem 0;
-    padding: 0.1rem 0.3rem;
+    line-height: $event-line-height;
+    margin: $event-vmargin 0;
+    padding: $event-vpadding 0.3rem;
 
     &.calendar-event-start {
         border-top-left-radius: 0.2rem;

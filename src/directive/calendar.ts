@@ -1,4 +1,5 @@
 import * as moment from 'moment';
+import { ResizeSensor } from 'css-element-queries';
 import { appModule } from '../module';
 import * as template from './calendar.html';
 import './calendar.scss';
@@ -10,6 +11,16 @@ const HEADER_FORMAT = 'ddd';
 const DAYS_FORMAT = 'D';
 const ROWS_PER_WEEK = 3;
 
+const BODY_CLASS = 'calendar-body';
+const DATE_LINE_HEIGHT = 1; // rem
+const DATE_VPADDING = 0.1; // rem
+const EVENT_LINE_HEIGHT = 1; // rem
+const EVENT_VMARGIN = 0.1; // rem
+const EVENT_VPADDING = 0.1; // rem
+
+const dateAdd = (date: Date, amount: number, unit: moment.unitOfTime.DurationConstructor) => moment(date).add(amount, unit).toDate();
+const toPx = (rem: number) => rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+
 var date = new Date();
 var d = date.getDate();
 var m = date.getMonth();
@@ -17,7 +28,11 @@ var y = date.getFullYear();
 
 const MOCK_EVENTS: IEvent[] = [
     { name: 'All Day Event', start: new Date(y, m, 1) },
+    { name: 'Long Event', start: new Date(y, m, d - 5+5), end: new Date(y, m, d + 2+5) },
     { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
+    { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
+    { name: 'Repeating Event', start: new Date(y, m, d - 3, 16, 0) },
+    { name: 'Repeating Event', start: new Date(y, m, d + 4, 16, 0) },
     { name: 'Repeating Event', start: new Date(y, m, d - 3, 16, 0) },
     { name: 'Repeating Event', start: new Date(y, m, d + 4, 16, 0) },
     { name: 'Birthday Party', start: new Date(y, m, d + 1, 19, 0), end: new Date(y, m, d + 1, 22, 30) },
@@ -70,9 +85,10 @@ class CalendarController {
 
     title: string;
     header: string[];
-    // weeks: IViewWeek[];
     weeks: { [week: number]: IViewWeek };
-    rowsPerWeek: number = ROWS_PER_WEEK;
+    rowsPerWeek: number;
+
+    private resizeSensor: ResizeSensor;
 
     static $inject = ['$scope', '$element'];
     constructor(
@@ -81,15 +97,17 @@ class CalendarController {
     ) { }
 
     $onInit() {
+        this.installResizeSensor();
+
         this.$scope.$watch('ctrl.firstDate', () => {
             this.render();
         });
-        this.$element.on('wheel', throttle((e: JQueryEventObject | WheelEvent) => this.$scope.$evalAsync(() => {
-            const wheelAmount = (((e as JQueryEventObject).originalEvent || e) as WheelEvent).deltaY;
+        this.$element.on('wheel', throttle((e: JQueryEventObject) => this.$scope.$evalAsync(() => {
+            const wheelAmount = ((e.originalEvent || e) as WheelEvent).deltaY;
             if (Math.abs(wheelAmount) > 0) {
                 const up = wheelAmount > 0;
                 const amount = up ? 7 : -7;
-                this.firstDateSum(amount, 'days');
+                this.firstDate = moment(this.firstDate).add(amount, 'days').toDate();
             }
             e.preventDefault();
             e.stopPropagation();
@@ -100,18 +118,38 @@ class CalendarController {
         // });
     }
 
-    private firstDateSum(amount: number, unit: moment.unitOfTime.DurationConstructor) {
-        const firstDate = moment(this.firstDate);
-        this.firstDate = firstDate.add(amount, unit).toDate();
+    $onDestroy() {
+        this.resizeSensor.detach();
+    }
 
+    private installResizeSensor() {
+        let lastHeight: number;
+        const body = this.$element[0].querySelector(`.${BODY_CLASS}`);
+        this.resizeSensor = new ResizeSensor(body, ({ height }) => {
+            if (lastHeight !== height) {
+                lastHeight = height;
+                const rowHeight = height / 6;
+                const eventsRowHeight = rowHeight - toPx(DATE_LINE_HEIGHT + DATE_VPADDING * 2);
+                const eventHeight = toPx(EVENT_LINE_HEIGHT + EVENT_VMARGIN * 2 + EVENT_VPADDING * 2);
+                const rowsPerWeek = Math.floor(eventsRowHeight / eventHeight);
+                if (this.rowsPerWeek !== rowsPerWeek) {
+                    this.rowsPerWeek = rowsPerWeek;
+                    this.$scope.$evalAsync(() => this.render());
+                }
+            }
+        });
     }
 
     previousMonth() {
-        this.firstDateSum(-1, 'month');
+        const firstDate = moment(this.firstDate);
+        const thisMonth = this.calculateCurrentMonth(firstDate);
+        this.firstDate = thisMonth.subtract(1, 'month').startOf('month').startOf('week').toDate();
     }
 
     nextMonth() {
-        this.firstDateSum(1, 'month');
+        const firstDate = moment(this.firstDate);
+        const thisMonth = this.calculateCurrentMonth(firstDate);
+        this.firstDate = thisMonth.add(1, 'month').startOf('month').startOf('week').toDate();
     }
 
     private calculateCurrentMonth(firstDate: moment.Moment) {
