@@ -13,7 +13,7 @@
 
 <!-- header -->
 <div class="calendar-row">
-    <div ng-repeat="header in ctrl.header" class="calendar-cell calendar-header">
+    <div ng-repeat="header in ctrl.header track by $index" class="calendar-cell calendar-header">
         {{header}}
     </div>
 </div>
@@ -21,30 +21,37 @@
 <!-- body -->
 <div class="calendar-body">
     <div ng-repeat="(nr, week) in ctrl.weeks" class="calendar-week">
+        <!-- colored/bordered box -->
         <div class="calendar-row calendar-boxes">
             <div
-                ng-repeat="item in week.dates track by item.id"
+                ng-repeat="date in week.dates track by date.id"
                 class="calendar-cell calendar-box"
-                ng-class="{'calendar-other-month': item.otherMonth}"
+                ng-class="{'calendar-other-month': date.otherMonth}"
             >
             </div>
         </div>
+        <!-- date label -->
         <div class="calendar-row">
             <div
-                ng-repeat="item in week.dates track by item.id"
+                ng-repeat="date in week.dates track by date.id"
                 class="calendar-cell calendar-date"
-                ng-class="{'calendar-other-month': item.otherMonth}"
+                ng-class="{'calendar-other-month': date.otherMonth}"
             >
-                {{item.label}}
+                {{date.label}}
             </div>
         </div>
-        <div class="calendar-row calendar-events-row" ng-repeat="row in week.rows track by $index">
+        <!-- event rows -->
+        <div
+            class="calendar-row calendar-events-row"
+            ng-repeat="row in week.rows track by $index"
+            ng-if="week.rows.length <= ctrl.rowsPerWeek || $index < ctrl.rowsPerWeek - 1"
+        >
             <div
                 ng-repeat="item in row.events track by $index"
                 class="calendar-cell"
                 ng-class="[
                     'calendar-offset-' + item.offset,
-                    'calendar-fill-' + item.rowSpan,
+                    'calendar-fill-' + item.colSpan,
                 ]"
             >
                 <div
@@ -56,6 +63,20 @@
                     title="{{item.event.name}}"
                 >
                     {{item.event.name}}
+                </div>
+            </div>
+        </div>
+        <!-- additional events -->
+        <div class="calendar-row calendar-events-row" ng-if="week.rows.length > ctrl.rowsPerWeek">
+            <div
+                ng-repeat="date in week.dates track by date.id"
+                class="calendar-cell calendar-fill-1"
+            >
+                <div
+                    ng-if="date.events.length >= ctrl.rowsPerWeek"
+                    class="calendar-addition-events-label"
+                >
+                    +{{date.events.length - ctrl.rowsPerWeek + 1}} more
                 </div>
             </div>
         </div>

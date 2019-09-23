@@ -9,7 +9,6 @@ const LOCALE = 'it';
 const MONTH_TITLE_FORMAT = 'MMMM YYYY';
 const HEADER_FORMAT = 'ddd';
 const DAYS_FORMAT = 'D';
-const ROWS_PER_WEEK = 3;
 
 const BODY_CLASS = 'calendar-body';
 const DATE_LINE_HEIGHT = 1; // rem
@@ -28,6 +27,10 @@ var y = date.getFullYear();
 
 const MOCK_EVENTS: IEvent[] = [
     { name: 'All Day Event', start: new Date(y, m, 1) },
+    { name: 'Custom event', start: new Date(y, m, d-12), end: new Date(y, m, d-8) },
+    { name: 'Custom event', start: new Date(y, m, d-13), end: new Date(y, m, d-10) },
+    { name: 'Custom event', start: new Date(y, m, d-10), end: new Date(y, m, d-8) },
+    { name: 'Custom event', start: new Date(y, m, d-13), end: new Date(y, m, d-12) },
     { name: 'Long Event', start: new Date(y, m, d - 5+5), end: new Date(y, m, d + 2+5) },
     { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
     { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
@@ -48,7 +51,7 @@ interface IEvent {
 interface IViewEvent {
     event: IEvent;
     offset: number;
-    rowSpan: number;
+    colSpan: number;
     continuesThisWeek: boolean;
     endsThisWeek: boolean;
 }
@@ -68,6 +71,7 @@ interface IViewDate {
     month: number;
     date: number;
     otherMonth: boolean;
+    events?: IEvent[];
 }
 
 class CalendarDirective implements ng.IDirective {
@@ -97,11 +101,38 @@ class CalendarController {
     ) { }
 
     $onInit() {
-        this.installResizeSensor();
+        this.addResizeSensor();
+        this.addScrollListener();
 
         this.$scope.$watch('ctrl.firstDate', () => {
             this.render();
         });
+    }
+
+    $onDestroy() {
+        this.resizeSensor.detach();
+        this.$element.off('wheel');
+    }
+
+    private addResizeSensor() {
+        let lastHeight: number;
+        const body = this.$element[0].querySelector(`.${BODY_CLASS}`);
+        this.resizeSensor = new ResizeSensor(body, ({ height }) => {
+            if (lastHeight !== height) {
+                lastHeight = height;
+                const rowHeight = height / 6;
+                const eventsRowHeight = rowHeight - toPx(DATE_LINE_HEIGHT + DATE_VPADDING * 2);
+                const eventHeight = toPx(EVENT_LINE_HEIGHT + EVENT_VMARGIN * 2 + EVENT_VPADDING * 2);
+                const rowsPerWeek = Math.floor(eventsRowHeight / eventHeight);
+                if (this.rowsPerWeek !== rowsPerWeek) {
+                    this.rowsPerWeek = rowsPerWeek;
+                    this.$scope.$evalAsync(this.render);
+                }
+            }
+        });
+    }
+
+    private addScrollListener() {
         this.$element.on('wheel', throttle((e: JQueryEventObject) => this.$scope.$evalAsync(() => {
             const wheelAmount = ((e.originalEvent || e) as WheelEvent).deltaY;
             if (Math.abs(wheelAmount) > 0) {
@@ -116,28 +147,6 @@ class CalendarController {
         // this.$element.on('scroll', e => {
         //     e.preventDefault();
         // });
-    }
-
-    $onDestroy() {
-        this.resizeSensor.detach();
-    }
-
-    private installResizeSensor() {
-        let lastHeight: number;
-        const body = this.$element[0].querySelector(`.${BODY_CLASS}`);
-        this.resizeSensor = new ResizeSensor(body, ({ height }) => {
-            if (lastHeight !== height) {
-                lastHeight = height;
-                const rowHeight = height / 6;
-                const eventsRowHeight = rowHeight - toPx(DATE_LINE_HEIGHT + DATE_VPADDING * 2);
-                const eventHeight = toPx(EVENT_LINE_HEIGHT + EVENT_VMARGIN * 2 + EVENT_VPADDING * 2);
-                const rowsPerWeek = Math.floor(eventsRowHeight / eventHeight);
-                if (this.rowsPerWeek !== rowsPerWeek) {
-                    this.rowsPerWeek = rowsPerWeek;
-                    this.$scope.$evalAsync(() => this.render());
-                }
-            }
-        });
     }
 
     previousMonth() {
@@ -167,7 +176,7 @@ class CalendarController {
         return date.set('month', maxCountMonth);
     }
 
-    private render() {
+    private render = () => {
         // header and title
         const firstDate = moment(this.firstDate);
         const thisMonth = this.calculateCurrentMonth(firstDate);
@@ -175,16 +184,16 @@ class CalendarController {
         this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format(HEADER_FORMAT));
 
         const day = firstDate.clone().startOf('week').hour(12);
-        const weeks: { [week: number]: IViewWeek } = {};
         const firstWeek = day.week();
         const lastWeek = firstWeek + 5;
+        const lastDay = firstDate.clone().add(5, 'weeks').endOf('weeks');
 
         let events = MOCK_EVENTS.slice();
 
-        this.weeks = [];
+        this.weeks = {};
         for (let w = firstWeek; w <= lastWeek; w++) {
-            weeks[w] = { dates: [], rows: [] } as IViewWeek;
-            const week = weeks[w];
+            this.weeks[w] = { dates: [], rows: [] };
+            const week = this.weeks[w];
             const startOfWeek = day.clone().startOf('week');
             const endOfWeek = day.clone().endOf('week');
             for (let d = 0; d < 7; d++) {
@@ -205,45 +214,68 @@ class CalendarController {
                         day.isAfter(event.start, 'day') &&
                         event.end &&
                         day.isSameOrBefore(event.end, 'day');
+                    const endDate = !event.end ? day : moment(event.end);
                     if (startsToday || continuesThisWeek) {
                         // event should be added to this week
-                        const endDate = !event.end ? day : moment(event.end);
                         const endViewDate = moment.min(endDate, endOfWeek);
                         const endsThisWeek = endOfWeek.isSameOrAfter(endDate, 'day');
-                        const weekOffset = day.diff(startOfWeek, 'day');
-                        const rowSpan = endViewDate.diff(day, 'day') + 1;
+                        const eventOffset = day.diff(startOfWeek, 'day');
+                        const colSpan = endViewDate.diff(day, 'day') + 1;
                         // calculate row index
-                        let rowIndex = week.rows.findIndex(row => (weekOffset + 1) > (row.cols || 0));
+                        let rowIndex = week.rows.findIndex(row => (eventOffset + 1) > (row.cols || 0));
                         if (rowIndex === -1) {
                             rowIndex = week.rows.length > 0 ? week.rows.length : 0;
                         }
                         if (!week.rows[rowIndex]) {
                             week.rows[rowIndex] = { events:[] };
                         }
-                        const offset = weekOffset - (week.rows[rowIndex].cols || 0);
+                        const offset = eventOffset - (week.rows[rowIndex].cols || 0);
                         const viewEvent: IViewEvent = {
                             event,
                             offset,
-                            rowSpan,
+                            colSpan,
                             continuesThisWeek,
                             endsThisWeek,
                         };
-                        week.rows[rowIndex].cols = Math.max(week.rows[rowIndex].cols || 0, offset + rowSpan);
+                        week.rows[rowIndex].cols = eventOffset + colSpan;
                         week.rows[rowIndex].events.push(viewEvent);
                         // remove from the events to render array
                         if (endsThisWeek) {
                             return false;
                         }
                     }
+                    // remove event if it won't be shown in the given period
+                    const outOfBounds = firstDate.isAfter(endDate, 'date') || lastDay.isBefore(event.start);
+                    if (outOfBounds) {
+                        return false;
+                    }
                     return true;
                 });
                 // next day
                 day.add(1, 'days');
             }
+            // group events
+            if (true || week.rows.length > this.rowsPerWeek) {
+                week.rows.forEach(row => {
+                    let offset = 0;
+                    row.events.forEach(event => {
+                        for (let c = 0; c < event.colSpan; c++) {
+                            const index = offset + event.offset + c;
+                            const date = week.dates[index];
+                            if (!date) {
+                                return;
+                            }
+                            if (!date.events) {
+                                date.events = [];
+                            }
+                            date.events.push(event.event);
+                        }
+                        offset += event.offset + event.colSpan;
+                    });
+                });
+                // week.rows.splice(this.rowsPerWeek - 1, week.rows.length - (this.rowsPerWeek - 1));
+            }
         }
-        // object to array
-        // Object.keys(weeks).forEach(key => this.weeks.push(weeks[key]));
-        this.weeks = weeks;
     }
 }
 
