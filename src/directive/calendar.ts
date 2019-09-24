@@ -26,7 +26,9 @@ var m = date.getMonth();
 var y = date.getFullYear();
 
 const MOCK_EVENTS: IEvent[] = [
-    { name: 'All Day Event', start: new Date(y, m, 1) },
+    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 3) },
+    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 3) },
+    { name: 'All Day Event', start: new Date(y, m, 2), end: new Date(y, m, 4) },
     { name: 'Custom event', start: new Date(y, m, d-12), end: new Date(y, m, d-8) },
     { name: 'Custom event', start: new Date(y, m, d-13), end: new Date(y, m, d-10) },
     { name: 'Custom event', start: new Date(y, m, d-10), end: new Date(y, m, d-8) },
@@ -72,6 +74,7 @@ interface IViewDate {
     date: number;
     otherMonth: boolean;
     events?: IEvent[];
+    additionalEvents?: number;
 }
 
 class CalendarDirective implements ng.IDirective {
@@ -256,19 +259,17 @@ class CalendarController {
             }
             // group events
             if (true || week.rows.length > this.rowsPerWeek) {
-                week.rows.forEach(row => {
+                week.rows.forEach((row, rowIndex) => {
                     let offset = 0;
                     row.events.forEach(event => {
                         for (let c = 0; c < event.colSpan; c++) {
                             const index = offset + event.offset + c;
                             const date = week.dates[index];
-                            if (!date) {
-                                return;
-                            }
                             if (!date.events) {
                                 date.events = [];
                             }
                             date.events.push(event.event);
+                            date.additionalEvents = Math.max(rowIndex - 1, date.events.length - this.rowsPerWeek + 1);
                         }
                         offset += event.offset + event.colSpan;
                     });

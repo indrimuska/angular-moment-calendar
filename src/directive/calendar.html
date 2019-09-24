@@ -1,3 +1,5 @@
+{{ctrl.rowsPerWeek}}
+
 <!-- navigation -->
 <div class="calendar-row">
     <div ng-click="ctrl.previousMonth()">
@@ -73,10 +75,10 @@
                 class="calendar-cell calendar-fill-1"
             >
                 <div
-                    ng-if="date.events.length >= ctrl.rowsPerWeek"
+                    ng-if="date.additionalEvents > 0"
                     class="calendar-addition-events-label"
                 >
-                    +{{date.events.length - ctrl.rowsPerWeek + 1}} more
+                    +{{date.additionalEvents}} more
                 </div>
             </div>
         </div>
