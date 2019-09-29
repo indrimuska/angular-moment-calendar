@@ -171,8 +171,12 @@ export  class CalendarController {
     /** Gloabl listener for click event, to close the tooltip when clicking outside its content */
     private setTooltipListeners() {
         const onBodyClick = (e: MouseEvent) => {
-            if (!contains(this.$element[0], e.target as HTMLElement)) {
+            if (tooltip && !contains(tooltip.popperInstance.popper, e.target as Element)) {
                 this.destroyTooltip();
+                // reset tooltip date
+                this.tooltipDate = undefined;
+                // apply scope to ensure all styles related to tooltip date are updated
+                this.$scope.$apply();
             }
         };
 
@@ -327,17 +331,25 @@ export  class CalendarController {
             container: this.$element[0],
             placement: 'bottom',
             trigger: 'manual',
-            title: $template[0],
             html: true,
+            title: $template[0],
+            arrowSelector: '.calendar-tooltip-arrow',
+            innerSelector: '.calendar-tooltip-inner',
+            template: '<div class="calendar-tooltip"><div class="calendar-tooltip-arrow"></div><div class="calendar-tooltip-inner"></div></div>',
             popperOptions: {
-                onCreate: () => this.$scope.$apply()
+                onCreate: () => {
+                    // apply scope to render the tooltip content
+                    this.$scope.$apply();
+                    // once the content is drawn, re-positionate the tooltip properly
+                    this.redrawTooltip();
+                }
             }
         }) as TooltipInternal;
         tooltip.show();
 
         // return destroy function, used to remove the tooltip when date will not be visible (e.g. scrolling up/down)
         return () => {
-            if (this.tooltipDate === date) {
+            if (this.tooltipDate && this.tooltipDate.id === date.id) {
                 this.destroyTooltip();
             }
         }

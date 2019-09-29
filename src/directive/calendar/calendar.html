@@ -1,5 +1,3 @@
-{{ctrl.rowsPerWeek}}
-
 <!-- navigation -->
 <div class="calendar-row">
     <div ng-click="ctrl.previousMonth()">
@@ -73,11 +71,11 @@
             <div
                 ng-repeat="date in week.dates track by date.id"
                 class="calendar-cell calendar-fill-1"
-                ng-class="{selected: tooltipDate.id === date.id}"
             >
                 <div
                     ng-if="date.additionalEvents > 0"
-                    class="calendar-addition-events-label"
+                    class="calendar-additional-events-label"
+                    ng-class="{'calendar-additional-events-expanded': ctrl.tooltipDate.id === date.id}"
                     moment-calendar-tooltip="date"
                 >
                     +{{date.additionalEvents}} more

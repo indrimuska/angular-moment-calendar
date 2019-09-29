@@ -37,10 +37,10 @@ export const throttle = <F extends (...args: any) => any>(func: F, wait: number)
 /**
  * Return true if the `target` is contained in `container`
  */
-export const contains = (container: HTMLElement, target: HTMLElement) => {
+export const contains = (container: Element, target: Element) => {
     if (target === container) return true;
     if (target === document.body) return false;
-    return contains(target, target.parentElement);
+    return contains(container, target.parentElement);
 }
 
 /**

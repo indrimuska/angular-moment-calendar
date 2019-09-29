@@ -1,6 +1,8 @@
-.tooltip {
+.calendar-tooltip {
+    $color: #ffc107;
+
     position: absolute;
-    background: #FFC107;
+    background: $color;
     color: black;
     width: 150px;
     border-radius: 3px;
@@ -8,19 +10,19 @@
     padding: 10px;
     z-index: 1;
 
-    .tooltip-arrow {
+    .calendar-tooltip-arrow {
         width: 0;
         height: 0;
         border-style: solid;
         position: absolute;
         margin: 5px;
-        border-color: #FFC107;
+        border-color: $color;
     }
 
     &[x-placement^="top"] {
         margin-bottom: 5px;
     
-        .tooltip-arrow {
+        .calendar-tooltip-arrow {
             border-width: 5px 5px 0 5px;
             border-left-color: transparent;
             border-right-color: transparent;
@@ -35,7 +37,7 @@
     &[x-placement^="bottom"] {
         margin-top: 5px;
         
-        .tooltip-arrow {
+        .calendar-tooltip-arrow {
             border-width: 0 5px 5px 5px;
             border-left-color: transparent;
             border-right-color: transparent;
@@ -50,7 +52,7 @@
     &[x-placement^="right"] {
         margin-left: 5px;
         
-        .tooltip-arrow {
+        .calendar-tooltip-arrow {
             border-width: 5px 5px 5px 0;
             border-left-color: transparent;
             border-top-color: transparent;
@@ -65,7 +67,7 @@
     &[x-placement^="left"] {
         margin-right: 5px;
     
-        .tooltip-arrow {
+        .calendar-tooltip-arrow {
             border-width: 5px 0 5px 5px;
             border-top-color: transparent;
             border-right-color: transparent;

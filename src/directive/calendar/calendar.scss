@@ -99,13 +99,20 @@ moment-calendar {
         margin-right: 0.2rem;
     }
 }
-.calendar-addition-events-label {
+.calendar-additional-events-label {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 85%;
     line-height: $event-line-height;
-    padding: $event-vmargin + $event-vpadding 0.3rem;
+    margin: $event-vmargin 0;
+    padding: $event-vpadding 0.3rem;
+    cursor: pointer;
+
+    &:hover,
+    &.calendar-additional-events-expanded {
+        background: rgba(255, 193, 7, 0.3);
+    }
 }
 
 @for $i from 1 through 7 {
