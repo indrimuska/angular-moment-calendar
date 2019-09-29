@@ -1,9 +1,8 @@
+import * as moment from 'moment';
 import { appModule } from '../../module';
 import { IViewDate } from '../calendar/calendar';
 import * as template from './tooltipContent.html';
-import moment = require('moment');
-
-const DAY_TOOLTIP_FORMAT = 'LL';
+import { DAY_TOOLTIP_FORMAT } from '../../constants';
 
 class TooltipContentDirective implements ng.IDirective {
     restrict = 'E';
