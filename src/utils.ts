@@ -33,3 +33,17 @@ export const throttle = <F extends (...args: any) => any>(func: F, wait: number)
         }
     }) as F;
 };
+
+/**
+ * Return true if the `target` is contained in `container`
+ */
+export const contains = (container: HTMLElement, target: HTMLElement) => {
+    if (target === container) return true;
+    if (target === document.body) return false;
+    return contains(target, target.parentElement);
+}
+
+/**
+ * Converts Pixels to REMs
+ */
+export const toPx = (rem: number) => rem * parseFloat(getComputedStyle(document.documentElement).fontSize);

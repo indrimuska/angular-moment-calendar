@@ -4,4 +4,6 @@ import './module';
 // services
 
 // directives
-import './directive/calendar';
+import './directive/calendar/calendar';
+import './directive/tooltip/tooltip';
+import './directive/tooltipContent/tooltipContent';

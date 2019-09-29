@@ -1,9 +1,11 @@
 import * as moment from 'moment';
 import { ResizeSensor } from 'css-element-queries';
-import { appModule } from '../module';
+import { appModule } from '../../module';
 import * as template from './calendar.html';
 import './calendar.scss';
-import { throttle } from '../utils';
+import { throttle, contains, toPx } from '../../utils';
+import Tooltip from 'tooltip.js';
+import Popper from 'popper.js';
 
 const LOCALE = 'it';
 const MONTH_TITLE_FORMAT = 'MMMM YYYY';
@@ -16,9 +18,6 @@ const DATE_VPADDING = 0.1; // rem
 const EVENT_LINE_HEIGHT = 1; // rem
 const EVENT_VMARGIN = 0.1; // rem
 const EVENT_VPADDING = 0.1; // rem
-
-const dateAdd = (date: Date, amount: number, unit: moment.unitOfTime.DurationConstructor) => moment(date).add(amount, unit).toDate();
-const toPx = (rem: number) => rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
 
 var date = new Date();
 var d = date.getDate();
@@ -44,6 +43,12 @@ const MOCK_EVENTS: IEvent[] = [
     { name: 'Click for Google', start: new Date(y, m, 28), end: new Date(y, m, 29) },
 ];
 
+let tooltip: TooltipInternal;
+
+interface TooltipInternal extends Tooltip {
+    popperInstance: Popper;
+}
+
 interface IEvent {
     name: string;
     start: Date;
@@ -66,8 +71,8 @@ interface IViewWeek {
     }>;
 }
 
-interface IViewDate {
-    id: number;
+export interface IViewDate {
+    id: string;
     label: string;
     year: number;
     month: number;
@@ -79,37 +84,37 @@ interface IViewDate {
 
 class CalendarDirective implements ng.IDirective {
     restrict = 'E';
-    scope = {
-    };
+    scope = {};
     controller = CalendarController;
     controllerAs = 'ctrl';
     bindToController = true;
     template = template;
 }
 
-class CalendarController {
+export class CalendarController {
     private firstDate: Date = moment().startOf('month').toDate();
 
     title: string;
     header: string[];
     weeks: { [week: number]: IViewWeek };
     rowsPerWeek: number;
+    tooltipDate: IViewDate;
 
     private resizeSensor: ResizeSensor;
 
-    static $inject = ['$scope', '$element'];
+    static $inject = ['$scope', '$element', '$compile'];
     constructor(
         private $scope: ng.IScope,
         private $element: ng.IAugmentedJQuery,
+        private $compile: ng.ICompileService,
     ) { }
 
     $onInit() {
         this.addResizeSensor();
         this.addScrollListener();
+        this.addTooltipListeners();
 
-        this.$scope.$watch('ctrl.firstDate', () => {
-            this.render();
-        });
+        this.$scope.$watch('ctrl.firstDate', this.render);
     }
 
     $onDestroy() {
@@ -131,25 +136,40 @@ class CalendarController {
                     this.rowsPerWeek = rowsPerWeek;
                     this.$scope.$evalAsync(this.render);
                 }
+                // re-positionate tooltip
+                this.redrawTooltip();
             }
         });
     }
 
     private addScrollListener() {
-        this.$element.on('wheel', throttle((e: JQueryEventObject) => this.$scope.$evalAsync(() => {
+        const scrollThrottled = throttle((e: JQueryEventObject) => {
             const wheelAmount = ((e.originalEvent || e) as WheelEvent).deltaY;
             if (Math.abs(wheelAmount) > 0) {
-                const up = wheelAmount > 0;
-                const amount = up ? 7 : -7;
-                this.firstDate = moment(this.firstDate).add(amount, 'days').toDate();
+                this.$scope.$evalAsync(() => {
+                    const up = wheelAmount > 0;
+                    const amount = up ? 7 : -7;
+                    this.firstDate = moment(this.firstDate).add(amount, 'days').toDate();
+                });
             }
+        }, 100);
+
+        this.$element.on('wheel', (e: JQueryEventObject) => {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-        }), 100));
-        // this.$element.on('scroll', e => {
-        //     e.preventDefault();
-        // });
+            scrollThrottled(e);
+        });
+    }
+
+    private addTooltipListeners() {
+        document.body.addEventListener('click', this.onBodyClick, true);
+    }
+
+    private onBodyClick = (e: MouseEvent) => {
+        if (!contains(this.$element[0], e.target as HTMLElement)) {
+            this.destroyTooltip();
+        }
     }
 
     previousMonth() {
@@ -202,7 +222,7 @@ class CalendarController {
             for (let d = 0; d < 7; d++) {
                 // prepare date
                 const viewDate: IViewDate = {
-                    id: day.date(),
+                    id: day.format('YYYYMMDD'),
                     label: day.format(DAYS_FORMAT),
                     year: day.year(),
                     month: day.month(),
@@ -276,6 +296,50 @@ class CalendarController {
                 });
                 // week.rows.splice(this.rowsPerWeek - 1, week.rows.length - (this.rowsPerWeek - 1));
             }
+        }
+
+        // redraw tooltip
+        this.redrawTooltip();
+    }
+
+    showTooltip($date: ng.IAugmentedJQuery, date: IViewDate) {
+        // hide visible tooltips
+        if (tooltip) this.destroyTooltip();
+
+        // create tooltip and show it
+        this.tooltipDate = date;
+        const $template = this.$compile('<moment-calendar-tooltip-content date="ctrl.tooltipDate"></moment-calendar-tooltip-content>')(this.$scope);
+        tooltip = new Tooltip($date[0], {
+            boundariesElement: this.$element[0],
+            container: this.$element[0],
+            placement: 'bottom',
+            trigger: 'manual',
+            title: $template[0],
+            html: true,
+            popperOptions: {
+                onCreate: () => this.$scope.$apply()
+            }
+        }) as TooltipInternal;
+        tooltip.show();
+
+        // return destroy function, used to remove the tooltip when date will not be visible (e.g. scrolling up/down)
+        return () => {
+            if (this.tooltipDate === date) {
+                this.destroyTooltip();
+            }
+        }
+    }
+
+    private destroyTooltip() {
+        if (tooltip) {
+            tooltip.dispose();
+            tooltip = undefined;
+        }
+    }
+
+    private redrawTooltip() {
+        if (tooltip) {
+            tooltip.popperInstance.update();
         }
     }
 }

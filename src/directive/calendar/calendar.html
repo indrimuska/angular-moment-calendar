@@ -73,10 +73,12 @@
             <div
                 ng-repeat="date in week.dates track by date.id"
                 class="calendar-cell calendar-fill-1"
+                ng-class="{selected: tooltipDate.id === date.id}"
             >
                 <div
                     ng-if="date.additionalEvents > 0"
                     class="calendar-addition-events-label"
+                    moment-calendar-tooltip="date"
                 >
                     +{{date.additionalEvents}} more
                 </div>
