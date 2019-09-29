@@ -57,7 +57,7 @@
                 <div
                     class="calendar-event"
                     ng-class="{
-                        'calendar-event-start': !item.continuesThisWeek,
+                        'calendar-event-start': item.startsThisDay,
                         'calendar-event-end': item.endsThisWeek,
                     }"
                     title="{{item.event.name}}"

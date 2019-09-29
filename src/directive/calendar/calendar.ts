@@ -25,20 +25,20 @@ var m = date.getMonth();
 var y = date.getFullYear();
 
 const MOCK_EVENTS: IEvent[] = [
-    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 3) },
-    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 3) },
-    { name: 'All Day Event', start: new Date(y, m, 2), end: new Date(y, m, 4) },
-    { name: 'Custom event', start: new Date(y, m, d-12), end: new Date(y, m, d-8) },
-    { name: 'Custom event', start: new Date(y, m, d-13), end: new Date(y, m, d-10) },
-    { name: 'Custom event', start: new Date(y, m, d-10), end: new Date(y, m, d-8) },
-    { name: 'Custom event', start: new Date(y, m, d-13), end: new Date(y, m, d-12) },
-    { name: 'Long Event', start: new Date(y, m, d - 5+5), end: new Date(y, m, d + 2+5) },
-    { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
-    { name: 'Long Event', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
-    { name: 'Repeating Event', start: new Date(y, m, d - 3, 16, 0) },
-    { name: 'Repeating Event', start: new Date(y, m, d + 4, 16, 0) },
-    { name: 'Repeating Event', start: new Date(y, m, d - 3, 16, 0) },
-    { name: 'Repeating Event', start: new Date(y, m, d + 4, 16, 0) },
+    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 2) },
+    { name: 'All Day Event', start: new Date(y, m, 1), end: new Date(y, m, 2) },
+    { name: '2 Days Event', start: new Date(y, m, 2), end: new Date(y, m, 2 + 1) },
+    { name: 'Custom event 1', start: new Date(y, m, d-12), end: new Date(y, m, d-9) },
+    { name: 'Custom event 2', start: new Date(y, m, d-13), end: new Date(y, m, d-10) },
+    { name: 'Custom event 3', start: new Date(y, m, d-10), end: new Date(y, m, d-9) },
+    { name: 'Custom event 4', start: new Date(y, m, d-13), end: new Date(y, m, d-12) },
+    { name: 'Long Event 1', start: new Date(y, m, d - 5+5), end: new Date(y, m, d + 2+5) },
+    { name: 'Long Event 2', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
+    { name: 'Long Event 3', start: new Date(y, m, d - 5), end: new Date(y, m, d + 2) },
+    { name: 'Repeating Event 1', start: new Date(y, m, d - 3, 16, 0) },
+    { name: 'Repeating Event 2', start: new Date(y, m, d + 4, 16, 0) },
+    { name: 'Repeating Event 3', start: new Date(y, m, d - 3, 16, 0) },
+    { name: 'Repeating Event 4', start: new Date(y, m, d + 4, 16, 0) },
     { name: 'Birthday Party', start: new Date(y, m, d + 1, 19, 0), end: new Date(y, m, d + 1, 22, 30) },
     { name: 'Click for Google', start: new Date(y, m, 28), end: new Date(y, m, 29) },
 ];
@@ -59,7 +59,8 @@ interface IViewEvent {
     event: IEvent;
     offset: number;
     colSpan: number;
-    continuesThisWeek: boolean;
+    startsThisDay: boolean;
+    endsThisDay: boolean;
     endsThisWeek: boolean;
 }
 
@@ -77,9 +78,9 @@ export interface IViewDate {
     label: string;
     year: number;
     month: number;
-    date: number;
+    day: number;
     otherMonth: boolean;
-    events?: IEvent[];
+    events?: IViewEvent[];
     additionalEvents?: number;
 }
 
@@ -229,6 +230,28 @@ export  class CalendarController {
 
         let events = MOCK_EVENTS.slice();
 
+        const getSetViewDate = (date: moment.Moment) => {
+            const w = date.week();
+            let week = this.weeks[w];
+            if (!week) {
+                week = this.weeks[w] = { dates: [], rows: [] };
+            }
+            const d = date.day();
+            if (!week.dates[d]) {
+                const viewDate: IViewDate = {
+                    id: date.format('YYYYMMDD'),
+                    label: date.format(DAYS_FORMAT),
+                    year: date.year(),
+                    month: date.month(),
+                    day: date.date(),
+                    otherMonth: date.isAfter(thisMonth, 'month') || date.isBefore(thisMonth, 'month'),
+                    additionalEvents: 0
+                };
+                week.dates[d] = viewDate;
+            }
+            return week.dates[d];
+        }
+
         this.weeks = {};
         for (let w = firstWeek; w <= lastWeek; w++) {
             this.weeks[w] = { dates: [], rows: [] };
@@ -236,27 +259,21 @@ export  class CalendarController {
             const startOfWeek = day.clone().startOf('week');
             const endOfWeek = day.clone().endOf('week');
             for (let d = 0; d < 7; d++) {
-                // prepare date
-                const viewDate: IViewDate = {
-                    id: day.format('YYYYMMDD'),
-                    label: day.format(DAYS_FORMAT),
-                    year: day.year(),
-                    month: day.month(),
-                    date: day.date(),
-                    otherMonth: day.isAfter(thisMonth, 'month') || day.isBefore(thisMonth, 'month')
-                };
-                week.dates.push(viewDate);
-                // prepare event
+                // add view date to weeek
+                getSetViewDate(day);
+
+                // parse event list
                 events = events.filter(event => {
-                    const startsToday = day.isSame(event.start, 'day');
+                    const startsThisDay = day.isSame(event.start, 'day');
                     const continuesThisWeek = day.isSame(startOfWeek, 'day') &&
                         day.isAfter(event.start, 'day') &&
                         event.end &&
                         day.isSameOrBefore(event.end, 'day');
-                    const endDate = !event.end ? day : moment(event.end);
-                    if (startsToday || continuesThisWeek) {
+                    const endDate = !event.end ? day : moment(event.end).endOf('day');
+                    if (startsThisDay || continuesThisWeek) {
                         // event should be added to this week
                         const endViewDate = moment.min(endDate, endOfWeek);
+                        const endsThisDay = day.isSame(endDate, 'day');
                         const endsThisWeek = endOfWeek.isSameOrAfter(endDate, 'day');
                         const eventOffset = day.diff(startOfWeek, 'day');
                         const colSpan = endViewDate.diff(day, 'day') + 1;
@@ -273,11 +290,30 @@ export  class CalendarController {
                             event,
                             offset,
                             colSpan,
-                            continuesThisWeek,
+                            startsThisDay,
+                            endsThisDay,
                             endsThisWeek,
                         };
                         week.rows[rowIndex].cols = eventOffset + colSpan;
                         week.rows[rowIndex].events.push(viewEvent);
+
+                        // set additional events
+                        for (let c = 0; c < viewEvent.colSpan; c++) {
+                            const thisDay = day.clone().add(c, 'day');
+                            const date = getSetViewDate(thisDay);
+                            if (!date.events) {
+                                date.events = [];
+                            }
+                            date.events.push({
+                                ...viewEvent,
+                                startsThisDay: thisDay.isSame(event.start, 'day'),
+                                endsThisDay: thisDay.isSame(endDate, 'day'),
+                            });
+                            if (rowIndex >= this.rowsPerWeek - 1) {
+                                date.additionalEvents++;
+                            }
+                        }
+
                         // remove from the events to render array
                         if (endsThisWeek) {
                             return false;
@@ -292,25 +328,6 @@ export  class CalendarController {
                 });
                 // next day
                 day.add(1, 'days');
-            }
-            // group events
-            if (true || week.rows.length > this.rowsPerWeek) {
-                week.rows.forEach((row, rowIndex) => {
-                    let offset = 0;
-                    row.events.forEach(event => {
-                        for (let c = 0; c < event.colSpan; c++) {
-                            const index = offset + event.offset + c;
-                            const date = week.dates[index];
-                            if (!date.events) {
-                                date.events = [];
-                            }
-                            date.events.push(event.event);
-                            date.additionalEvents = Math.max(rowIndex - 1, date.events.length - this.rowsPerWeek + 1);
-                        }
-                        offset += event.offset + event.colSpan;
-                    });
-                });
-                // week.rows.splice(this.rowsPerWeek - 1, week.rows.length - (this.rowsPerWeek - 1));
             }
         }
 

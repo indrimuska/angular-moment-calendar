@@ -1,7 +1,12 @@
 <div>{{ctrl.title}}</div>
 
-<ul>
-    <li ng-repeat="event in ctrl.date.events track by $index">
-        {{event.name}}
-    </li>
-</ul>
+<div
+    class="calendar-event"
+    ng-class="{
+        'calendar-event-start': item.startsThisDay,
+        'calendar-event-end': item.endsThisDay,
+    }"
+    ng-repeat="item in ctrl.date.events track by $index"
+>
+    {{item.event.name}}
+</div>
