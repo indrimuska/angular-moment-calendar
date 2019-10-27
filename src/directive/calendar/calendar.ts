@@ -86,9 +86,17 @@ export interface IViewDate {
     additionalEvents?: number;
 }
 
+const DEFAULTS: Partial<CalendarController> = {
+    today: false,
+    showTime: true,
+};
+
 class CalendarDirective implements ng.IDirective {
     restrict = 'E';
-    scope = {};
+    scope = {
+        today: '=?',
+        showTime: '=?',
+    };
     controller = CalendarController;
     controllerAs = 'ctrl';
     bindToController = true;
@@ -97,6 +105,11 @@ class CalendarDirective implements ng.IDirective {
 
 /** @internal */
 export  class CalendarController {
+    /** If `true`, If `true`, it highlights the current date in the *Month View*. */
+    today?: boolean;
+    /** If `true`, it shows the start time of each event in the *Month View*. */
+    showTime?: boolean;
+
     private firstDate: Date = moment().startOf('month').toDate();
     private resizeSensor: ResizeSensor;
     private unsubscriptions: Array<() => void> = [];
@@ -115,6 +128,7 @@ export  class CalendarController {
     ) { }
 
     $onInit() {
+        this.setDefaultValues();
         this.redrawOnHeightChange();
         this.changeDateOnScroll();
         this.setTooltipListeners();
@@ -124,6 +138,15 @@ export  class CalendarController {
 
     $onDestroy() {
         this.unsubscriptions.forEach(unsubscribe => unsubscribe());
+    }
+
+    /** Set defualt value for un-defined parameters */
+    private setDefaultValues() {
+        Object.keys(DEFAULTS).forEach(key => {
+            if (typeof this[key] === 'undefined') {
+                this[key] = DEFAULTS[key];
+            }
+        });
     }
 
     /** Calculates the maximum number of rows that can be rendered for a week */

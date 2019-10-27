@@ -28,7 +28,7 @@
                 class="calendar-cell calendar-box"
                 ng-class="{
                     'calendar-other-month': date.otherMonth,
-                    'calendar-today': date.isToday,
+                    'calendar-today': ctrl.today && date.isToday,
                 }"
             >
             </div>
@@ -65,7 +65,7 @@
                     }"
                     title="{{item.event.name}}"
                 >
-                    <div ng-if="item.time" class="calendar-event-time">{{item.time}}</div>
+                    <div ng-if="ctrl.showTime && item.time" class="calendar-event-time">{{item.time}}</div>
                     <div class="calendar-event-description">{{item.event.name}}</div>
                 </div>
             </div>
