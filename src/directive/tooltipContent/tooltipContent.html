@@ -8,5 +8,6 @@
     }"
     ng-repeat="item in ctrl.date.events track by $index"
 >
-    {{item.event.name}}
+    <div ng-if="item.time" class="calendar-event-time">{{item.time}}</div>
+    <div class="calendar-event-description">{{item.event.name}}</div>
 </div>

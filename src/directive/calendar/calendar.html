@@ -26,7 +26,10 @@
             <div
                 ng-repeat="date in week.dates track by date.id"
                 class="calendar-cell calendar-box"
-                ng-class="{'calendar-other-month': date.otherMonth}"
+                ng-class="{
+                    'calendar-other-month': date.otherMonth,
+                    'calendar-today': date.isToday,
+                }"
             >
             </div>
         </div>
@@ -62,7 +65,8 @@
                     }"
                     title="{{item.event.name}}"
                 >
-                    {{item.event.name}}
+                    <div ng-if="item.time" class="calendar-event-time">{{item.time}}</div>
+                    <div class="calendar-event-description">{{item.event.name}}</div>
                 </div>
             </div>
         </div>

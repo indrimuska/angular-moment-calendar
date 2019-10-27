@@ -57,6 +57,7 @@ interface IEvent {
 
 interface IViewEvent {
     event: IEvent;
+    time?: string;
     offset: number;
     colSpan: number;
     startsThisDay: boolean;
@@ -80,6 +81,7 @@ export interface IViewDate {
     month: number;
     day: number;
     otherMonth: boolean;
+    isToday: boolean;
     events?: IViewEvent[];
     additionalEvents?: number;
 }
@@ -224,6 +226,7 @@ export  class CalendarController {
         this.title = thisMonth.format(MONTH_TITLE_FORMAT);
         this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format(HEADER_FORMAT));
 
+        const today = moment();
         const day = firstDate.clone().startOf('week').hour(12);
         const maxWeek = firstDate.weeksInYear();
         const firstWeek = day.week();
@@ -250,12 +253,26 @@ export  class CalendarController {
                     year: date.year(),
                     month: date.month(),
                     day: date.date(),
+                    isToday: date.isSame(today, 'day'),
                     otherMonth: date.isAfter(thisMonth, 'month') || date.isBefore(thisMonth, 'month'),
                     additionalEvents: 0
                 };
                 week.dates[d] = viewDate;
             }
             return week.dates[d];
+        }
+        const getEventTime = (event: IEvent): string | undefined => {
+            // full day event
+            if (!event.end) return;
+    
+            const startDate = moment(event.start);
+            const { minutes } = startDate.toObject();
+            let ltFormat = moment.localeData().longDateFormat('LT');
+            // remove minutes
+            if (minutes === 0) ltFormat = ltFormat.replace(/\:(mm|MM)/g, '');
+            // lowercase meridiem -- no space before
+            ltFormat = ltFormat.replace(' A', 'a');
+            return startDate.format(ltFormat);
         }
 
         this.weeks = {};
@@ -291,9 +308,11 @@ export  class CalendarController {
                         if (!week.rows[rowIndex]) {
                             week.rows[rowIndex] = { events:[] };
                         }
+                        const time = getEventTime(event);
                         const offset = eventOffset - (week.rows[rowIndex].cols || 0);
                         const viewEvent: IViewEvent = {
                             event,
+                            time,
                             offset,
                             colSpan,
                             startsThisDay,
