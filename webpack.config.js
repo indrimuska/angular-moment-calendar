@@ -20,6 +20,7 @@ module.exports = (env, argv) => ({
     externals: [
         'angular',
         'moment',
+        'jquery',
     ],
     resolve: {
         extensions: ['.ts', '.js', '.scss']
@@ -32,7 +33,7 @@ module.exports = (env, argv) => ({
         ]
     },
     plugins: [
-        new webpack.ProvidePlugin({ moment: 'moment' }),
+        new webpack.ProvidePlugin({ jQuery: 'jQuery', moment: 'moment' }),
         new MiniCssExtractPlugin({ filename: 'angular-moment-calendar.css' }),
     ],
 });

@@ -1,81 +1,84 @@
 .calendar-tooltip {
-    $color: #ffc107;
+    $arrow-size: 5px;
+    $arrow-color: #fff;
 
     position: absolute;
-    background: $color;
-    color: black;
-    width: 150px;
-    border-radius: 3px;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-    padding: 10px;
+    width: 180px;
     z-index: 1;
 
     .calendar-tooltip-arrow {
         width: 0;
         height: 0;
-        border-style: solid;
         position: absolute;
-        margin: 5px;
-        border-color: $color;
+        border: $arrow-size solid transparent;
+
+        &:after {
+            content: '';
+            position: absolute;
+            box-shadow: 0 0 $arrow-size ($arrow-size / 2) #ccc;
+            z-index: -1;
+        }
+    }
+    .calendar-tooltip-inner {
+        background: #fff;
+        border-radius: 3px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        padding: 10px;
     }
 
     &[x-placement^="top"] {
-        margin-bottom: 5px;
+        margin-bottom: $arrow-size;
     
         .calendar-tooltip-arrow {
-            border-width: 5px 5px 0 5px;
-            border-left-color: transparent;
-            border-right-color: transparent;
-            border-bottom-color: transparent;
-            bottom: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
+            border-top-color: $arrow-color;
+            bottom: -$arrow-size * 2;
+            left: calc(50% - #{$arrow-size});
+
+            &:after {
+                bottom: $arrow-size;
+            }
         }
     }
     
     &[x-placement^="bottom"] {
-        margin-top: 5px;
+        margin-top: $arrow-size;
         
         .calendar-tooltip-arrow {
-            border-width: 0 5px 5px 5px;
-            border-left-color: transparent;
-            border-right-color: transparent;
-            border-top-color: transparent;
-            top: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
+            border-bottom-color: $arrow-color;
+            top: -$arrow-size * 2;
+            left: calc(50% - #{$arrow-size});
+
+            &:after {
+                top: $arrow-size;
+            }
         }
     }
     
     &[x-placement^="right"] {
-        margin-left: 5px;
+        margin-left: $arrow-size;
         
         .calendar-tooltip-arrow {
-            border-width: 5px 5px 5px 0;
-            border-left-color: transparent;
-            border-top-color: transparent;
-            border-bottom-color: transparent;
-            left: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
+            border-right-color: $arrow-color;
+            left: -$arrow-size * 2;
+            top: calc(50% - #{$arrow-size});
+            
+            &:after {
+                left: $arrow-size;
+            }
         }
     }
     
     &[x-placement^="left"] {
-        margin-right: 5px;
+        margin-right: $arrow-size;
     
         .calendar-tooltip-arrow {
-            border-width: 5px 0 5px 5px;
-            border-top-color: transparent;
-            border-right-color: transparent;
-            border-bottom-color: transparent;
-            right: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
+            border-left-color: $arrow-color;
+            right: -$arrow-size * 2;
+            top: calc(50% - #{$arrow-size});
+            
+            &:after {
+                right: $arrow-size;
+            }
         }
     }
 }

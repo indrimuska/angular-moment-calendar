@@ -154,11 +154,12 @@ export  class CalendarController {
             if (Math.abs(wheelAmount) > 0) {
                 this.$scope.$evalAsync(() => {
                     const up = wheelAmount > 0;
-                    const amount = up ? 7 : -7;
+                    const multiplier = wheelAmount > 5 ? 2 : wheelAmount > 100 ? 3 : 1;
+                    const amount = multiplier * (up ? 7 : -7);
                     this.firstDate = moment(this.firstDate).add(amount, 'days').toDate();
                 });
             }
-        }, 100);
+        }, 50);
 
         this.$element.on('wheel', (e: JQueryEventObject) => {
             e.preventDefault();
@@ -201,18 +202,18 @@ export  class CalendarController {
 
     /** Return the selected month, based on the higher number of rendered days for each month */
     private calculateCurrentMonth(firstDate: moment.Moment) {
-        let maxCountMonth: number;
-        const months: { [month: number]: number } = {};
+        let maxCountMonth: string;
+        const months: { [month: string]: number } = {};
         const date = firstDate.clone();
         for (let i = 0; i < 5 * 7; i++) {
-            const month = date.get('month');
-            months[month] = (months[month] || 0) + 1;
-            if (!maxCountMonth || month !== maxCountMonth && months[month] > months[maxCountMonth]) {
-                maxCountMonth = month;
+            const yearMonth = date.format('YYYYMM');
+            months[yearMonth] = (months[yearMonth] || 0) + 1;
+            if (!maxCountMonth || yearMonth !== maxCountMonth && months[yearMonth] > months[maxCountMonth]) {
+                maxCountMonth = yearMonth;
             }
             date.add(1, 'day');
         }
-        return date.set('month', maxCountMonth);
+        return moment(maxCountMonth, 'YYYYMM');
     }
 
     /** Recalculates the `weeks` property for rendering purpose */
@@ -224,14 +225,19 @@ export  class CalendarController {
         this.header = moment.weekdays().map((d, i) => moment().locale(LOCALE).startOf('week').add(i, 'day').format(HEADER_FORMAT));
 
         const day = firstDate.clone().startOf('week').hour(12);
+        const maxWeek = firstDate.weeksInYear();
         const firstWeek = day.week();
         const lastWeek = firstWeek + 5;
         const lastDay = firstDate.clone().add(5, 'weeks').endOf('weeks');
 
         let events = MOCK_EVENTS.slice();
 
+        const getWeekCode = (week: number) => {
+            const weekNo = week < firstWeek ? maxWeek + week : week;
+            return weekNo;
+        };
         const getSetViewDate = (date: moment.Moment) => {
-            const w = date.week();
+            const w = getWeekCode(date.week());
             let week = this.weeks[w];
             if (!week) {
                 week = this.weeks[w] = { dates: [], rows: [] };
@@ -254,8 +260,8 @@ export  class CalendarController {
 
         this.weeks = {};
         for (let w = firstWeek; w <= lastWeek; w++) {
-            this.weeks[w] = { dates: [], rows: [] };
-            const week = this.weeks[w];
+            const weekNo = getWeekCode(w);
+            const week = this.weeks[weekNo] = { dates: [], rows: [] };
             const startOfWeek = day.clone().startOf('week');
             const endOfWeek = day.clone().endOf('week');
             for (let d = 0; d < 7; d++) {
