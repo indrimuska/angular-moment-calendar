@@ -6,8 +6,8 @@
         'calendar-event-start': item.startsThisDay,
         'calendar-event-end': item.endsThisDay,
     }"
-    ng-repeat="item in ctrl.date.events track by $index"
+    ng-repeat="item in ctrl.$ctrl.tooltipDate.events track by $index"
 >
-    <div ng-if="ctrl.showTime && item.time" class="calendar-event-time">{{item.time}}</div>
+    <div ng-if="ctrl.$ctrl.showTime && item.time" class="calendar-event-time">{{item.time}}</div>
     <div class="calendar-event-description">{{item.event.name}}</div>
 </div>

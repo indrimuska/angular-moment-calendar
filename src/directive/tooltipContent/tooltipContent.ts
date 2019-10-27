@@ -1,13 +1,13 @@
 import * as moment from 'moment';
 import { appModule } from '../../module';
-import { IViewDate } from '../calendar/calendar';
+import { CalendarController } from '../calendar/calendar';
 import * as template from './tooltipContent.html';
 import { DAY_TOOLTIP_FORMAT } from '../../constants';
 
 class TooltipContentDirective implements ng.IDirective {
     restrict = 'E';
     scope = {
-        date: '='
+        $ctrl: '='
     };
     controller = TooltipContentController;
     controllerAs = 'ctrl';
@@ -16,12 +16,11 @@ class TooltipContentDirective implements ng.IDirective {
 }
 
 class TooltipContentController {
-    date: IViewDate;
-
+    $ctrl: CalendarController;
     title: string;
 
     $onInit() {
-        this.title = moment(this.date).format(DAY_TOOLTIP_FORMAT);
+        this.title = moment(this.$ctrl.tooltipDate).format(DAY_TOOLTIP_FORMAT);
     }
 }
 

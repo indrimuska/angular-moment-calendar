@@ -39,7 +39,7 @@ const MOCK_EVENTS: IEvent[] = [
     { name: 'Repeating Event 2', start: new Date(y, m, d + 4, 16, 0) },
     { name: 'Repeating Event 3', start: new Date(y, m, d - 3, 16, 0) },
     { name: 'Repeating Event 4', start: new Date(y, m, d + 4, 16, 0) },
-    { name: 'Birthday Party', start: new Date(y, m, d + 1, 19, 0), end: new Date(y, m, d + 1, 22, 30) },
+    { name: 'Birthday Party', start: new Date(y, m, d + 1, 19, 30), end: new Date(y, m, d + 1, 22, 30) },
     { name: 'Click for Google', start: new Date(y, m, 28), end: new Date(y, m, 29) },
 ];
 
@@ -390,7 +390,7 @@ export  class CalendarController {
 
         // create tooltip and show it
         this.tooltipDate = date;
-        const $template = this.$compile('<moment-calendar-tooltip-content date="ctrl.tooltipDate"></moment-calendar-tooltip-content>')(this.$scope);
+        const $template = this.$compile('<moment-calendar-tooltip-content $ctrl="ctrl"></moment-calendar-tooltip-content>')(this.$scope);
         tooltip = new Tooltip($date[0], {
             boundariesElement: this.$element[0],
             container: this.$element[0],

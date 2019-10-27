@@ -1,5 +1,5 @@
 /** @internal */
-export const LOCALE = 'it';
+export const LOCALE = 'en';
 /** @internal */
 export const MONTH_TITLE_FORMAT = 'MMMM YYYY';
 /** @internal */
