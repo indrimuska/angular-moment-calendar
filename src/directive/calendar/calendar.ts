@@ -55,7 +55,8 @@ interface IEvent {
     end?: Date;
 }
 
-interface IViewEvent {
+/** @internal */
+export interface IViewEvent {
     event: IEvent;
     time?: string;
     offset: number;
@@ -82,6 +83,7 @@ export interface IViewDate {
     day: number;
     otherMonth: boolean;
     isToday: boolean;
+    dragOver?: boolean;
     events?: IViewEvent[];
     additionalEvents?: number;
 }
@@ -119,6 +121,8 @@ export  class CalendarController {
     weeks: { [week: number]: IViewWeek };
     rowsPerWeek: number;
     tooltipDate: IViewDate;
+    draggingEvent: IViewEvent;
+    draggingDate: Date;
 
     static $inject = ['$scope', '$element', '$compile'];
     constructor(
@@ -433,6 +437,48 @@ export  class CalendarController {
         if (tooltip) {
             tooltip.popperInstance.update();
         }
+    }
+
+    eventDragStart(event: IViewEvent) {
+        this.draggingEvent = event;
+    }
+
+    eventDragOver = throttle((date: IViewDate) => {
+        const { start, end } = this.draggingEvent.event;
+        const momentDate = moment(date.id, 'YYYYMMDD');
+        if (!this.draggingDate) {
+            if (momentDate.isBefore(start, 'day')) {
+                this.draggingDate = start;
+            } else
+            if (end && momentDate.isAfter(end, 'day')) {
+                this.draggingDate = end;
+            } else {
+                this.draggingDate = momentDate.toDate();
+            }
+        }
+        const draggingDate = moment(this.draggingDate);
+        const preDates = draggingDate.diff(start, 'day');
+        const postDates = end ? draggingDate.diff(end, 'day') : 0;
+        const newStart = momentDate.clone().subtract(preDates, 'days');
+        const newEnd = end ? momentDate.clone().subtract(postDates, 'days') : newStart;
+        Object.keys(this.weeks).forEach(w => {
+            const week = this.weeks[w] as IViewWeek;
+            week.dates.forEach(day => {
+                const date = moment(day.id, 'YYYYMMDD');
+                day.dragOver = date.isSameOrAfter(newStart, 'day') && date.isSameOrBefore(newEnd, 'day');
+            });
+        });
+    }, 100);
+
+    eventDragEnd() {
+        this.draggingDate = undefined;
+        this.draggingEvent = undefined;
+        Object.keys(this.weeks).forEach(w => {
+            const week = this.weeks[w] as IViewWeek;
+            week.dates.forEach(day => {
+                day.dragOver = false;
+            });
+        });
     }
 }
 

@@ -19,7 +19,7 @@
 </div>
 
 <!-- body -->
-<div class="calendar-body">
+<div class="calendar-body" ng-class="{'calendar-dragging': !!ctrl.draggingEvent}">
     <div ng-repeat="(nr, week) in ctrl.weeks" class="calendar-week">
         <!-- colored/bordered box -->
         <div class="calendar-row calendar-boxes">
@@ -29,7 +29,9 @@
                 ng-class="{
                     'calendar-other-month': date.otherMonth,
                     'calendar-today': ctrl.today && date.isToday,
+                    'calendar-date-dragging': date.dragOver,
                 }"
+                ng-on-dragover="ctrl.eventDragOver(date)"
             >
             </div>
         </div>
@@ -57,17 +59,18 @@
                     'calendar-fill-' + item.colSpan,
                 ]"
             >
-                <div
+                <moment-calendar-event
                     class="calendar-event"
                     ng-class="{
                         'calendar-event-start': item.startsThisDay,
                         'calendar-event-end': item.endsThisWeek,
                     }"
                     title="{{item.event.name}}"
+                    ng-attr-draggable="true"
+                    item="item"
+                    $ctrl="ctrl"
                 >
-                    <div ng-if="ctrl.showTime && item.time" class="calendar-event-time">{{item.time}}</div>
-                    <div class="calendar-event-description">{{item.event.name}}</div>
-                </div>
+                </moment-calendar-event>
             </div>
         </div>
         <!-- additional events -->

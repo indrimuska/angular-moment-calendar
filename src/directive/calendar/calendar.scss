@@ -57,6 +57,9 @@ moment-calendar {
     &.calendar-today {
         background: #fffce5;
     }
+    &.calendar-date-dragging {
+        background: #f1fff7;
+    }
 }
 .calendar-events-row {
     position: relative;
@@ -138,5 +141,12 @@ moment-calendar {
     }
     .calendar-offset-#{$i} {
         margin-left: percentage($i / 7);
+    }
+}
+
+.calendar-dragging {
+    .calendar-date,
+    .calendar-events-row {
+        pointer-events: none;
     }
 }

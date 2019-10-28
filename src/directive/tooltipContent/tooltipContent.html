@@ -1,13 +1,14 @@
 <div>{{ctrl.title}}</div>
 
-<div
+<moment-calendar-event
     class="calendar-event"
     ng-class="{
         'calendar-event-start': item.startsThisDay,
         'calendar-event-end': item.endsThisDay,
     }"
+    title="{{item.event.name}}"
     ng-repeat="item in ctrl.$ctrl.tooltipDate.events track by $index"
+    item="item"
+    $ctrl="ctrl.$ctrl"
 >
-    <div ng-if="ctrl.$ctrl.showTime && item.time" class="calendar-event-time">{{item.time}}</div>
-    <div class="calendar-event-description">{{item.event.name}}</div>
-</div>
+</moment-calendar-event>
